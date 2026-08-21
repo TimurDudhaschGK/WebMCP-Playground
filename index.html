@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WebMCP Playground – document.modelContext</title>
+  <meta name="description" content="Interactive playground for the WebMCP API (navigator.modelContext / document.modelContext). Register, inspect, and invoke tools right in the browser." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────────────── -->
+<header>
+  <h1>⚡ WebMCP Playground</h1>
+  <span id="status-badge" class="status-badge polyfilled">⚡ Polyfilled</span>
+  <span style="flex:1"></span>
+  <a href="https://github.com/webmachinelearning/webmcp" target="_blank" rel="noopener"
+     style="color:var(--text-muted);font-size:12px;text-decoration:none;">📄 Spec</a>
+</header>
+
+<!-- ── Main layout ────────────────────────────────────── -->
+<main>
+
+  <!-- Sidebar: tool registry -->
+  <aside>
+    <div class="sidebar-header">
+      <h2>Registered Tools (<span id="tool-count">0</span>)</h2>
+      <button class="btn btn-secondary btn-sm" id="btn-load-demos" title="Load built-in demo tools">Load demos</button>
+    </div>
+    <div id="tool-list">
+      <p class="empty-state">No tools registered yet.<br>Run a snippet to add tools.</p>
+    </div>
+  </aside>
+
+  <!-- Workspace: editor + output -->
+  <div class="workspace">
+
+    <!-- Editor toolbar -->
+    <div class="editor-bar">
+      <label>Template:</label>
+      <select id="template-select" class="btn btn-secondary" style="padding:5px 10px;">
+        <option value="">— choose template —</option>
+        <option value="blank">registerTool</option>
+        <option value="provideContext">provideContext (batch)</option>
+        <option value="listTools">List tools</option>
+        <option value="unregister">unregisterTool</option>
+        <option value="async">Async execute</option>
+      </select>
+      <span style="flex:1"></span>
+      <button class="btn btn-secondary btn-sm" id="btn-clear-tools">🗑 Clear tools</button>
+      <button class="btn btn-primary" id="btn-run">▶ Run  <kbd style="opacity:.6;font-size:10px;">Ctrl+↵</kbd></button>
+    </div>
+
+    <!-- Editor + Output split panes -->
+    <div class="panes">
+
+      <!-- Code editor pane -->
+      <div class="pane">
+        <div class="pane-header">
+          <h3>Snippet Editor</h3>
+          <span style="font-size:11px;color:var(--text-muted);">
+            <code>navigator.modelContext</code> &amp; <code>document.modelContext</code> available
+          </span>
+        </div>
+        <textarea id="editor" spellcheck="false" autocomplete="off" autocorrect="off"
+                  autocapitalize="off" aria-label="Code editor"></textarea>
+      </div>
+
+      <!-- Activity log pane -->
+      <div class="pane">
+        <div class="pane-header">
+          <h3>Activity Log</h3>
+          <button class="btn btn-secondary btn-sm" id="btn-clear-log">Clear</button>
+        </div>
+        <div id="output" role="log" aria-live="polite" aria-label="Activity log"></div>
+      </div>
+
+    </div><!-- /.panes -->
+
+    <!-- Invoke panel (shown when a tool is selected) -->
+    <div id="invoke-panel">
+      <h3 id="invoke-title">Invoke tool</h3>
+      <div id="invoke-params"></div>
+      <div id="invoke-actions"></div>
+    </div>
+
+  </div><!-- /.workspace -->
+
+</main>
+
+<script src="playground.js"></script>
+</body>
+</html>
