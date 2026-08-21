@@ -46,21 +46,15 @@ app.http('health', {
   authLevel: 'anonymous',
   route: 'health',
   handler: async () => {
-    // Booleans only: never echo endpoints, setting values or exception detail to the caller.
-    const checks = {
-      runtime: true,
-      storage: await storageReachable()
-    };
-    const healthy = Object.values(checks).every(Boolean);
+    const storageOk = await storageReachable();
 
     return {
-      status: healthy ? 200 : 503,
+      status: storageOk ? 200 : 503,
       headers: { 'cache-control': 'no-store' },
+      // Verdicts only: never echo endpoints, setting values or exception detail to the caller.
       jsonBody: {
-        status: healthy ? 'healthy' : 'degraded',
-        application: 'webmcp-playground',
-        checks,
-        checkedAt: new Date().toISOString()
+        status: storageOk ? 'healthy' : 'degraded',
+        storage: storageOk ? 'ok' : 'unavailable'
       }
     };
   }
