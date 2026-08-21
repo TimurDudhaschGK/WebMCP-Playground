@@ -1,93 +1,1184 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WebMCP Playground – document.modelContext</title>
-  <meta name="description" content="Interactive playground for the WebMCP API (navigator.modelContext / document.modelContext). Register, inspect, and invoke tools right in the browser." />
-  <link rel="stylesheet" href="style.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
 </head>
 <body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/nocturne-bcfa1af6-1a06-45ff-ab35-64acd41ead6d/styles.css">
+<script src="_ds/nocturne-bcfa1af6-1a06-45ff-ab35-64acd41ead6d/_ds_bundle.js"></script>
+<style>
+  body { margin: 0; overflow-x: hidden; }
+  @keyframes noct-pulse { 0% { box-shadow: 0 0 0 0 rgba(145,132,217,.45); } 70% { box-shadow: 0 0 0 10px rgba(145,132,217,0); } 100% { box-shadow: 0 0 0 0 rgba(145,132,217,0); } }
+  @keyframes noct-blink { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+  @keyframes noct-slide { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .noct-log-row { animation: noct-slide .18s ease-out; }
+  .noct-touched { animation: noct-pulse 1.1s ease-out; }
+  textarea, input, select, button { font-family: inherit; }
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-thumb { background: #3f424d; border-radius: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+</style>
+</helmet>
 
-<!-- ── Header ─────────────────────────────────────────── -->
-<header>
-  <h1>⚡ WebMCP Playground</h1>
-  <span id="status-badge" class="status-badge polyfilled">⚡ Polyfilled</span>
-  <span style="flex:1"></span>
-  <a href="https://github.com/webmachinelearning/webmcp" target="_blank" rel="noopener"
-     style="color:var(--text-muted);font-size:12px;text-decoration:none;">📄 Spec</a>
-</header>
+<div style="display: flex; align-items: stretch; min-height: 100vh; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body);">
 
-<!-- ── Main layout ────────────────────────────────────── -->
-<main>
-
-  <!-- Sidebar: tool registry -->
-  <aside>
-    <div class="sidebar-header">
-      <h2>Registered Tools (<span id="tool-count">0</span>)</h2>
-      <button class="btn btn-secondary btn-sm" id="btn-load-demos" title="Load built-in demo tools">Load demos</button>
-    </div>
-    <div id="tool-list">
-      <p class="empty-state">No tools registered yet.<br>Run a snippet to add tools.</p>
-    </div>
-  </aside>
-
-  <!-- Workspace: editor + output -->
-  <div class="workspace">
-
-    <!-- Editor toolbar -->
-    <div class="editor-bar">
-      <label>Template:</label>
-      <select id="template-select" class="btn btn-secondary" style="padding:5px 10px;">
-        <option value="">— choose template —</option>
-        <option value="blank">registerTool</option>
-        <option value="provideContext">provideContext (batch)</option>
-        <option value="listTools">List tools</option>
-        <option value="unregister">unregisterTool</option>
-        <option value="async">Async execute</option>
-      </select>
-      <span style="flex:1"></span>
-      <button class="btn btn-secondary btn-sm" id="btn-clear-tools">🗑 Clear tools</button>
-      <button class="btn btn-primary" id="btn-run">▶ Run  <kbd style="opacity:.6;font-size:10px;">Ctrl+↵</kbd></button>
-    </div>
-
-    <!-- Editor + Output split panes -->
-    <div class="panes">
-
-      <!-- Code editor pane -->
-      <div class="pane">
-        <div class="pane-header">
-          <h3>Snippet Editor</h3>
-          <span style="font-size:11px;color:var(--text-muted);">
-            <code>navigator.modelContext</code> &amp; <code>document.modelContext</code> available
-          </span>
-        </div>
-        <textarea id="editor" spellcheck="false" autocomplete="off" autocorrect="off"
-                  autocapitalize="off" aria-label="Code editor"></textarea>
+  <nav style="width: 236px; flex: 0 0 236px; border-right: 1px solid var(--color-neutral-900); padding: 22.4px 16.8px; display: flex; flex-direction: column; gap: 22.4px; position: sticky; top: 0; height: 100vh; background: linear-gradient(180deg, #1b1d2c 0%, var(--color-bg) 60%);">
+    <div style="display: flex; flex-direction: column; gap: 5.6px;">
+      <div style="display: flex; align-items: center; gap: 8.4px;">
+        <span style="width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--color-accent); display: inline-flex; align-items: center; justify-content: center; color: var(--color-accent); font-size: 12px;">◇</span>
+        <span style="font-family: var(--font-heading); font-size: 15px; letter-spacing: -0.01em;">WebMCP Lab</span>
       </div>
-
-      <!-- Activity log pane -->
-      <div class="pane">
-        <div class="pane-header">
-          <h3>Activity Log</h3>
-          <button class="btn btn-secondary btn-sm" id="btn-clear-log">Clear</button>
-        </div>
-        <div id="output" role="log" aria-live="polite" aria-label="Activity log"></div>
-      </div>
-
-    </div><!-- /.panes -->
-
-    <!-- Invoke panel (shown when a tool is selected) -->
-    <div id="invoke-panel">
-      <h3 id="invoke-title">Invoke tool</h3>
-      <div id="invoke-params"></div>
-      <div id="invoke-actions"></div>
+      <span class="text-muted" style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; padding-left: 30px;">notebook &amp; playground</span>
     </div>
 
-  </div><!-- /.workspace -->
+    <div style="display: flex; flex-direction: column; gap: 2.8px;">
+      <sc-for list="{{ nav }}" as="item" hint-placeholder-count="5">
+        <button onClick="{{ item.go }}" style="all: unset; cursor: pointer; display: flex; align-items: center; gap: 8.4px; padding: 8.4px 11.2px; border-radius: 8px; font-size: 13.5px; transition: background .12s, color .12s;" style-hover="background: rgba(145,132,217,.09);" style-focus-visible="outline: 2px solid var(--color-accent); outline-offset: 2px;">
+          <span style="width: 18px; text-align: center; font-size: 12px; opacity: {{ item.dim }}; color: {{ item.color }};">{{ item.glyph }}</span>
+          <span style="color: {{ item.color }};">{{ item.label }}</span>
+          <span style="flex: 1;"></span>
+          <span style="width: 3px; height: 14px; border-radius: 2px; background: {{ item.mark }};"></span>
+        </button>
+      </sc-for>
+    </div>
 
-</main>
+    <span style="flex: 1;"></span>
 
-<script src="playground.js"></script>
+    <div style="display: flex; flex-direction: column; gap: 8.4px; border-top: 1px solid var(--color-neutral-900); padding-top: 16.8px;">
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span style="width: 7px; height: 7px; border-radius: 50%; background: {{ statusDot }}; animation: noct-blink 2.4s ease-in-out infinite;"></span>
+        <span style="font-size: 12px;">{{ statusLabel }}</span>
+      </div>
+      <span class="text-muted" style="font-size: 11px; line-height: 1.45;">{{ statusNote }}</span>
+      <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11.5px;">
+        <a href="https://webmachinelearning.github.io/webmcp/" target="_blank" rel="noopener" style="text-decoration: none;">W3C draft ↗</a>
+        <a href="https://github.com/TimurDudhaschGK/WebMCP-Playground" target="_blank" rel="noopener" style="text-decoration: none;">This repo ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <main style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+
+    <!-- ── OVERVIEW ───────────────────────────────── -->
+    <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 56px 56px 78px; max-width: 1080px;">
+        <span class="text-muted" style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;">Lab notebook · entry 001 · {{ today }}</span>
+        <h1 style="font-size: 52px; max-width: 17ch; margin: 16.8px 0 16.8px; line-height: 1.06;">Your site already has an API. It's just written in buttons.</h1>
+        <p style="max-width: 62ch; font-size: 17px; line-height: 1.6; color: var(--color-neutral-300);">An agent pointed at your product today squints at pixels, guesses which div is the submit button, and hopes. WebMCP flips it: the page hands the agent a typed list of things it can actually do. Same JavaScript you already shipped — now with a name, a description and a schema.</p>
+
+        <div style="display: flex; gap: 11.2px; margin: 22.4px 0 44px;">
+          <button class="btn btn-primary" onClick="{{ goPlayground }}">Open the playground</button>
+          <button class="btn btn-secondary" onClick="{{ goSandbox }}">Watch an agent work a queue</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--color-neutral-900); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-sm); margin-bottom: 44px;">
+          <div style="background: var(--color-bg); padding: 22.4px;">
+            <h6 class="text-muted" style="margin-bottom: 11.2px;">Before — the agent guesses</h6>
+            <div style="display: flex; flex-direction: column; gap: 5.6px; font-size: 12.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--color-neutral-500);">
+              <span>screenshot() → 1.2 MB</span>
+              <span>find “Refund” … 3 candidates</span>
+              <span>click(x=812, y=447)</span>
+              <span style="color: #d98d8d;">✕ modal moved. retry 2/5</span>
+            </div>
+            <p class="text-muted" style="margin: 16.8px 0 0; font-size: 12.5px;">Vision-driven flows land somewhere near half the time, and every layout tweak breaks them again.</p>
+          </div>
+          <div style="background: #1b1d2e; padding: 22.4px;">
+            <h6 style="margin-bottom: 11.2px; color: var(--color-accent-300);">After — the site declares</h6>
+            <div style="display: flex; flex-direction: column; gap: 5.6px; font-size: 12.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--color-neutral-300);">
+              <span>tools() → 7 declared</span>
+              <span>issue_refund · destructive</span>
+              <span>{ ticket: "T-1042", cents: 14800 }</span>
+              <span style="color: var(--color-accent-300);">✓ browser asked the human first</span>
+            </div>
+            <p class="text-muted" style="margin: 16.8px 0 0; font-size: 12.5px;">Structured in, structured out, consent mediated by the browser instead of by luck.</p>
+          </div>
+        </div>
+
+        <h3 style="margin-bottom: 5.6px;">The sixty-second version</h3>
+        <p class="text-muted" style="max-width: 60ch; font-size: 14px;">Three moves. That's the whole protocol surface you need to be useful to an agent.</p>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16.8px; margin: 16.8px 0 44px;">
+          <sc-for list="{{ steps }}" as="s" hint-placeholder-count="3">
+            <div class="card" style="display: flex; flex-direction: column; gap: 8.4px;">
+              <span class="card-kicker">{{ s.n }} — {{ s.who }}</span>
+              <span class="card-title" style="font-size: 18px;">{{ s.title }}</span>
+              <pre style="margin: 0; background: #12141f; border: 1px solid var(--color-neutral-900); border-radius: 8px; padding: 11.2px; font-size: 11.5px; line-height: 1.55; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--color-neutral-300);">{{ s.code }}</pre>
+              <span class="text-muted" style="font-size: 12.5px;">{{ s.note }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <h3 style="margin-bottom: 11.2px;">Where it actually runs</h3>
+        <table class="table" style="width: 100%; max-width: 760px;">
+          <thead><tr><th>Surface</th><th>Status</th><th>What you get</th></tr></thead>
+          <tbody>
+            <sc-for list="{{ support }}" as="row" hint-placeholder-count="4">
+              <tr>
+                <td style="white-space: nowrap;">{{ row.name }}</td>
+                <td><span class="tag {{ row.tagClass }}">{{ row.status }}</span></td>
+                <td class="text-muted">{{ row.detail }}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <p class="text-muted" style="margin-top: 11.2px; font-size: 12.5px; max-width: 62ch;">This notebook runs on the native API when it finds one and falls back to its own polyfill when it doesn't — so every page here is live either way. The rail tells you which you're on.</p>
+      </div>
+    </sc-if>
+
+    <!-- ── PLAYGROUND ─────────────────────────────── -->
+    <sc-if value="{{ isPlayground }}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; flex-direction: column; height: 100vh; min-height: 0;">
+        <div style="padding: 16.8px 22.4px; border-bottom: 1px solid var(--color-neutral-900); display: flex; align-items: center; gap: 11.2px;">
+          <div style="display: flex; flex-direction: column;">
+            <h4 style="margin: 0;">Playground</h4>
+            <span class="text-muted" style="font-size: 12px;">Snippets run against the live registry. ⌘/Ctrl + ↵ to execute.</span>
+          </div>
+          <span style="flex: 1;"></span>
+          <select class="input" style="width: auto; padding: 5.6px 8.4px; font-size: 12.5px;" value="{{ templateSel }}" onChange="{{ onTemplate }}">
+            <option value="">insert a template…</option>
+            <sc-for list="{{ templateOpts }}" as="t" hint-placeholder-count="5">
+              <option value="{{ t.id }}">{{ t.label }}</option>
+            </sc-for>
+          </select>
+          <button class="btn btn-secondary btn-sm" onClick="{{ clearTools }}">Clear registry</button>
+          <button class="btn btn-primary btn-sm" onClick="{{ runSnippet }}">▶ Run</button>
+        </div>
+
+        <div style="flex: 1; min-height: 0; display: grid; grid-template-columns: 264px 1fr 1fr;">
+
+          <aside style="border-right: 1px solid var(--color-neutral-900); overflow-y: auto; padding: 16.8px;">
+            <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 11.2px;">
+              <h6 style="margin: 0;">Registry</h6>
+              <span class="text-muted" style="font-size: 11px;">{{ toolCountLabel }}</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 5.6px;">
+              <sc-for list="{{ toolCards }}" as="t" hint-placeholder-count="6">
+                <button onClick="{{ t.select }}" style="all: unset; cursor: pointer; display: flex; flex-direction: column; gap: 4px; padding: 9px 11.2px; border-radius: 8px; border: 1px solid {{ t.border }}; background: {{ t.bg }};" style-hover="border-color: var(--color-accent-600);">
+                  <span style="display: flex; align-items: center; gap: 6px;">
+                    <span style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px;">{{ t.name }}</span>
+                    <span style="flex: 1;"></span>
+                    <span class="tag {{ t.annClass }}" style="font-size: 9.5px; padding: 1px 5px;">{{ t.ann }}</span>
+                  </span>
+                  <span class="text-muted" style="font-size: 11.5px; line-height: 1.4;">{{ t.description }}</span>
+                </button>
+              </sc-for>
+              <sc-if value="{{ noTools }}" hint-placeholder-val="{{ false }}">
+                <p class="text-muted" style="font-size: 12.5px;">Registry empty. Run a snippet, or load the CRM tool set from the sandbox.</p>
+              </sc-if>
+            </div>
+            <div class="hr" style="margin: 16.8px 0;"></div>
+            <h6 style="margin-bottom: 8.4px;">Registry timeline</h6>
+            <div style="display: flex; flex-direction: column; gap: 5.6px;">
+              <sc-for list="{{ timeline }}" as="ev" hint-placeholder-count="3">
+                <div style="display: flex; gap: 6px; font-size: 11.5px; align-items: baseline;">
+                  <span style="color: {{ ev.color }};">{{ ev.sign }}</span>
+                  <span style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">{{ ev.name }}</span>
+                  <span style="flex: 1;"></span>
+                  <span class="text-muted">{{ ev.at }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </aside>
+
+          <section style="border-right: 1px solid var(--color-neutral-900); display: flex; flex-direction: column; min-height: 0;">
+            <div style="display: flex; gap: 2px; padding: 8.4px 11.2px 0; border-bottom: 1px solid var(--color-neutral-900);">
+              <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="3">
+                <button onClick="{{ tab.select }}" style="all: unset; cursor: pointer; padding: 6px 11.2px; border-radius: 8px 8px 0 0; font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: {{ tab.color }}; background: {{ tab.bg }}; border-bottom: 2px solid {{ tab.mark }};">{{ tab.name }}</button>
+              </sc-for>
+            </div>
+            <textarea spellcheck="false" value="{{ code }}" onChange="{{ onCode }}" onKeyDown="{{ onEditorKey }}" style="flex: 1; min-height: 0; resize: none; border: 0; outline: none; background: #12141f; color: var(--color-neutral-200); padding: 16.8px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; line-height: 1.65; tab-size: 2;"></textarea>
+            <div style="border-top: 1px solid var(--color-neutral-900); padding: 11.2px 16.8px; background: {{ verdictBg }};">
+              <span style="font-size: 12px; color: {{ verdictColor }};">{{ verdict }}</span>
+            </div>
+          </section>
+
+          <section style="display: flex; flex-direction: column; min-height: 0;">
+            <sc-if value="{{ hasSelection }}" hint-placeholder-val="{{ false }}">
+              <div style="border-bottom: 1px solid var(--color-neutral-900); padding: 16.8px; display: flex; flex-direction: column; gap: 11.2px;">
+                <div style="display: flex; align-items: flex-start; gap: 8.4px;">
+                  <div style="display: flex; flex-direction: column; gap: 2.8px; min-width: 0;">
+                    <span style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; color: var(--color-accent-300);">{{ sel.name }}</span>
+                    <span class="text-muted" style="font-size: 12px;">{{ sel.description }}</span>
+                  </div>
+                  <span style="flex: 1;"></span>
+                  <button class="btn btn-ghost btn-sm" onClick="{{ closeInvoke }}">✕</button>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8.4px;">
+                  <sc-for list="{{ fields }}" as="f" hint-placeholder-count="2">
+                    <div class="field">
+                      <label>{{ f.label }} <span class="text-muted" style="font-weight: 400;">{{ f.hint }}</span></label>
+                      <sc-if value="{{ f.isEnum }}" hint-placeholder-val="{{ false }}">
+                        <select class="input" value="{{ f.value }}" onChange="{{ f.onInput }}">
+                          <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="2">
+                            <option value="{{ o }}">{{ o }}</option>
+                          </sc-for>
+                        </select>
+                      </sc-if>
+                      <sc-if value="{{ f.isPlain }}" hint-placeholder-val="{{ true }}">
+                        <input class="input" placeholder="{{ f.placeholder }}" value="{{ f.value }}" onInput="{{ f.onInput }}">
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8.4px;">
+                  <button class="btn btn-primary btn-sm" onClick="{{ invoke }}">▶ Invoke</button>
+                  <span class="text-muted" style="font-size: 11.5px;">{{ sel.annNote }}</span>
+                </div>
+              </div>
+            </sc-if>
+            <div style="padding: 11.2px 16.8px; border-bottom: 1px solid var(--color-neutral-900); display: flex; align-items: center; gap: 8.4px;">
+              <h6 style="margin: 0;">Activity</h6>
+              <span class="text-muted" style="font-size: 11px;">{{ logMeta }}</span>
+              <span style="flex: 1;"></span>
+              <button class="btn btn-ghost btn-sm" onClick="{{ clearLog }}">Clear</button>
+            </div>
+            <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 11.2px 16.8px;">
+              <sc-for list="{{ logRows }}" as="e" hint-placeholder-count="4">
+                <div class="noct-log-row" style="display: flex; flex-direction: column; gap: 4px; padding: 8.4px 0; border-bottom: 1px solid #22242f;">
+                  <div style="display: flex; align-items: baseline; gap: 6px; font-size: 12px;">
+                    <span style="color: {{ e.color }}; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">{{ e.kind }}</span>
+                    <span>{{ e.label }}</span>
+                    <span style="flex: 1;"></span>
+                    <span class="text-muted" style="font-size: 10.5px;">{{ e.meta }}</span>
+                  </div>
+                  <sc-if value="{{ e.hasBody }}" hint-placeholder-val="{{ false }}">
+                    <pre style="margin: 0; background: #12141f; border-radius: 6px; padding: 8.4px; font-size: 11px; line-height: 1.5; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--color-neutral-400);">{{ e.body }}</pre>
+                  </sc-if>
+                </div>
+              </sc-for>
+              <sc-if value="{{ noLog }}" hint-placeholder-val="{{ false }}">
+                <p class="text-muted" style="font-size: 12.5px;">Nothing yet. Every registration, invocation, consent prompt and throw lands here with its timing.</p>
+              </sc-if>
+            </div>
+          </section>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ── CAPABILITY LABS ────────────────────────── -->
+    <sc-if value="{{ isLabs }}" hint-placeholder-val="{{ true }}">
+      <div style="display: grid; grid-template-columns: 300px 1fr; min-height: 100vh;">
+        <aside style="border-right: 1px solid var(--color-neutral-900); padding: 22.4px 16.8px; display: flex; flex-direction: column; gap: 11.2px;">
+          <div style="display: flex; flex-direction: column; gap: 2.8px;">
+            <h4 style="margin: 0;">Capability labs</h4>
+            <span class="text-muted" style="font-size: 12px;">Ten things the API can do that a screenshot can't.</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2.8px;">
+            <sc-for list="{{ labList }}" as="l" hint-placeholder-count="10">
+              <button onClick="{{ l.select }}" style="all: unset; cursor: pointer; display: flex; gap: 8.4px; align-items: baseline; padding: 8.4px 11.2px; border-radius: 8px; background: {{ l.bg }};" style-hover="background: rgba(145,132,217,.09);">
+                <span class="text-muted" style="font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">{{ l.n }}</span>
+                <span style="font-size: 13px; color: {{ l.color }};">{{ l.title }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </aside>
+        <div style="padding: 44px 44px 66px; max-width: 900px;">
+          <span class="text-muted" style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;">Lab {{ lab.n }} · {{ lab.tagline }}</span>
+          <h2 style="margin: 8.4px 0 11.2px;">{{ lab.title }}</h2>
+          <p style="max-width: 60ch; color: var(--color-neutral-300); font-size: 15.5px;">{{ lab.blurb }}</p>
+          <div style="display: flex; gap: 8.4px; margin: 16.8px 0 22.4px;">
+            <button class="btn btn-primary btn-sm" onClick="{{ runLab }}">▶ Run it here</button>
+            <button class="btn btn-secondary btn-sm" onClick="{{ sendLabToEditor }}">Open in playground</button>
+          </div>
+          <pre style="margin: 0 0 16.8px; background: #12141f; border: 1px solid var(--color-neutral-900); border-radius: 10px; padding: 16.8px; font-size: 12.5px; line-height: 1.65; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--color-neutral-200);">{{ lab.code }}</pre>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16.8px;">
+            <div class="card">
+              <span class="card-kicker">Result</span>
+              <pre style="margin: 8.4px 0 0; font-size: 11.5px; line-height: 1.55; white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: {{ labResultColor }};">{{ labResult }}</pre>
+            </div>
+            <div class="card">
+              <span class="card-kicker">Notebook margin</span>
+              <p style="margin: 8.4px 0 0; font-size: 13px; color: var(--color-neutral-300);">{{ lab.note }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ── CRM SANDBOX ────────────────────────────── -->
+    <sc-if value="{{ isSandbox }}" hint-placeholder-val="{{ true }}">
+      <div style="display: grid; grid-template-columns: 1fr 340px; min-height: 100vh;">
+        <div style="padding: 22.4px 22.4px 44px; min-width: 0;">
+          <div style="display: flex; align-items: flex-end; gap: 11.2px; margin-bottom: 16.8px;">
+            <div style="display: flex; flex-direction: column; gap: 2.8px;">
+              <span class="text-muted" style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;">Tool source · pretend support desk</span>
+              <h4 style="margin: 0;">Helpdesk queue</h4>
+            </div>
+            <span style="flex: 1;"></span>
+            <button class="btn btn-secondary btn-sm" onClick="{{ publishTools }}">{{ publishLabel }}</button>
+            <button class="btn btn-ghost btn-sm" onClick="{{ resetDesk }}">Reset desk</button>
+          </div>
+          <p class="text-muted" style="font-size: 12.5px; max-width: 70ch; margin-bottom: 16.8px;">Seven tools, registered from this view. Open a ticket and the set grows — that's <code style="font-family: ui-monospace, monospace;">provideContext</code> re-declaring the whole surface for the state the page is actually in. Rows the agent touches flash.</p>
+
+          <table class="table" style="width: 100%;">
+            <thead><tr><th>Ticket</th><th>Subject</th><th>Priority</th><th>Owner</th><th>Status</th></tr></thead>
+            <tbody>
+              <sc-for list="{{ ticketRows }}" as="t" hint-placeholder-count="5">
+                <tr class="{{ t.flash }}" style="cursor: pointer; background: {{ t.bg }};" onClick="{{ t.open }}">
+                  <td style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; white-space: nowrap;">{{ t.id }}</td>
+                  <td>{{ t.subject }}<div class="text-muted" style="font-size: 11.5px;">{{ t.customer }}</div></td>
+                  <td><span class="tag {{ t.prioClass }}">{{ t.priority }}</span></td>
+                  <td class="text-muted" style="white-space: nowrap;">{{ t.owner }}</td>
+                  <td><span class="tag tag-outline">{{ t.status }}</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+
+          <sc-if value="{{ hasOpenTicket }}" hint-placeholder-val="{{ false }}">
+            <div class="card elev-md" style="margin-top: 22.4px;">
+              <div style="display: flex; align-items: baseline; gap: 8.4px;">
+                <span class="card-kicker">{{ open.id }} · {{ open.queue }}</span>
+                <span style="flex: 1;"></span>
+                <button class="btn btn-ghost btn-sm" onClick="{{ closeTicket }}">✕</button>
+              </div>
+              <span class="card-title">{{ open.subject }}</span>
+              <p class="card-body">{{ open.body }}</p>
+              <div class="card-meta" style="display: flex; gap: 11.2px; flex-wrap: wrap;">
+                <span>{{ open.customer }}</span><span>·</span><span>{{ open.plan }}</span><span>·</span><span>disputed {{ open.amount }}</span>
+              </div>
+              <div style="display: flex; gap: 6px; margin-top: 11.2px; flex-wrap: wrap;">
+                <span class="tag tag-accent" style="font-size: 10px;">+ reply_to_ticket</span>
+                <span class="tag tag-accent" style="font-size: 10px;">+ issue_refund</span>
+                <span class="tag tag-accent" style="font-size: 10px;">+ escalate_ticket</span>
+                <span class="text-muted" style="font-size: 11.5px;">three tools appeared because this ticket is open</span>
+              </div>
+            </div>
+          </sc-if>
+
+          <div class="hr" style="margin: 22.4px 0;"></div>
+          <h6 style="margin-bottom: 8.4px;">Declared surface</h6>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8.4px;">
+            <sc-for list="{{ deskTools }}" as="d" hint-placeholder-count="7">
+              <div style="border: 1px solid var(--color-neutral-900); border-radius: 8px; padding: 9px 11.2px; display: flex; flex-direction: column; gap: 4px;">
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;">{{ d.name }}</span>
+                  <span style="flex: 1;"></span>
+                  <span class="tag {{ d.annClass }}" style="font-size: 9.5px; padding: 1px 5px;">{{ d.ann }}</span>
+                </span>
+                <span class="text-muted" style="font-size: 11px; line-height: 1.4;">{{ d.description }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <aside style="border-left: 1px solid var(--color-neutral-900); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; background: #191b29;">
+          <div style="padding: 16.8px; border-bottom: 1px solid var(--color-neutral-900); display: flex; flex-direction: column; gap: 2.8px;">
+            <span style="display: flex; align-items: center; gap: 6px;">
+              <span style="width: 7px; height: 7px; border-radius: 50%; background: {{ agentDot }};"></span>
+              <h6 style="margin: 0;">Agent side</h6>
+            </span>
+            <span class="text-muted" style="font-size: 11.5px;">{{ agentStatus }}</span>
+          </div>
+          <div style="padding: 11.2px 16.8px; display: flex; flex-direction: column; gap: 5.6px; border-bottom: 1px solid var(--color-neutral-900);">
+            <sc-for list="{{ tasks }}" as="task" hint-placeholder-count="3">
+              <button onClick="{{ task.run }}" style="all: unset; cursor: pointer; padding: 8.4px 11.2px; border-radius: 8px; border: 1px solid var(--color-neutral-800); font-size: 12.5px; line-height: 1.4;" style-hover="border-color: var(--color-accent); background: rgba(145,132,217,.08);">“{{ task.prompt }}”</button>
+            </sc-for>
+          </div>
+          <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 11.2px 16.8px; display: flex; flex-direction: column; gap: 8.4px;">
+            <sc-for list="{{ transcript }}" as="m" hint-placeholder-count="0">
+              <div class="noct-log-row" style="display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: {{ m.color }};">{{ m.role }}</span>
+                <span style="font-size: 12.5px; line-height: 1.5; color: var(--color-neutral-200);">{{ m.text }}</span>
+                <sc-if value="{{ m.hasBody }}" hint-placeholder-val="{{ false }}">
+                  <pre style="margin: 0; background: #12141f; border-radius: 6px; padding: 8.4px; font-size: 10.5px; line-height: 1.5; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--color-neutral-400);">{{ m.body }}</pre>
+                </sc-if>
+                <sc-if value="{{ m.hasBar }}" hint-placeholder-val="{{ false }}">
+                  <span style="height: 4px; border-radius: 2px; background: var(--color-neutral-800); overflow: hidden; display: block;">
+                    <span style="display: block; height: 100%; background: var(--color-accent); width: {{ m.bar }};"></span>
+                  </span>
+                </sc-if>
+              </div>
+            </sc-for>
+            <sc-if value="{{ noTranscript }}" hint-placeholder-val="{{ true }}">
+              <p class="text-muted" style="font-size: 12.5px;">Pick a task above. The agent will only use what this page declared — you'll see it ask, get gated, and get told when it's missing an argument.</p>
+            </sc-if>
+          </div>
+        </aside>
+      </div>
+    </sc-if>
+
+    <!-- ── REFERENCE ──────────────────────────────── -->
+    <sc-if value="{{ isReference }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 44px 44px 78px; max-width: 1000px;">
+        <span class="text-muted" style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;">Reference · spec surface, and where this polyfill differs</span>
+        <h2 style="margin: 8.4px 0 11.2px;">API reference</h2>
+        <p style="max-width: 62ch; color: var(--color-neutral-300);">The W3C draft moved during the origin trial: older write-ups say <code style="font-family: ui-monospace, monospace;">navigator.modelContext</code>, newer ones <code style="font-family: ui-monospace, monospace;">document.modelContext</code>. The polyfill installs both and treats them as one object, so snippets from either era run.</p>
+        <sc-for list="{{ refSections }}" as="sec" hint-placeholder-count="3">
+          <div style="margin-top: 33px;">
+            <h4 style="margin-bottom: 2.8px;">{{ sec.title }}</h4>
+            <p class="text-muted" style="font-size: 13px; max-width: 62ch;">{{ sec.blurb }}</p>
+            <table class="table" style="width: 100%; margin-top: 11.2px;">
+              <thead><tr><th style="width: 34%;">Member</th><th style="width: 33%;">Spec</th><th style="width: 33%;">This polyfill</th></tr></thead>
+              <tbody>
+                <sc-for list="{{ sec.rows }}" as="r" hint-placeholder-count="3">
+                  <tr>
+                    <td style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;">{{ r.member }}</td>
+                    <td class="text-muted" style="font-size: 12.5px;">{{ r.spec }}</td>
+                    <td style="font-size: 12.5px; color: {{ r.deltaColor }};">{{ r.delta }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </sc-for>
+        <div class="hr" style="margin: 33px 0;"></div>
+        <h4>Known gaps</h4>
+        <ul style="max-width: 62ch; color: var(--color-neutral-300); font-size: 13.5px; line-height: 1.7; padding-left: 18px;">
+          <sc-for list="{{ gaps }}" as="g" hint-placeholder-count="4">
+            <li>{{ g }}</li>
+          </sc-for>
+        </ul>
+      </div>
+    </sc-if>
+  </main>
+
+  <!-- ── consent / elicitation overlay ───────────── -->
+  <sc-if value="{{ hasPending }}" hint-placeholder-val="{{ false }}">
+    <div class="dialog-backdrop" style="position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 40; background: rgba(10,11,18,.72);">
+      <div class="dialog elev-lg" style="width: 420px; max-width: calc(100vw - 44px);">
+        <span class="text-muted" style="font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;">{{ pending.kicker }}</span>
+        <h4 class="dialog-title" style="margin-top: 5.6px;">{{ pending.title }}</h4>
+        <p class="dialog-body">{{ pending.body }}</p>
+        <sc-if value="{{ pending.needsInput }}" hint-placeholder-val="{{ false }}">
+          <div class="field">
+            <label>{{ pending.inputLabel }}</label>
+            <input class="input" placeholder="{{ pending.placeholder }}" value="{{ pending.value }}" onInput="{{ onPendingInput }}">
+          </div>
+        </sc-if>
+        <sc-if value="{{ pending.hasArgs }}" hint-placeholder-val="{{ false }}">
+          <pre style="margin: 0 0 11.2px; background: #12141f; border-radius: 6px; padding: 11.2px; font-size: 11px; line-height: 1.5; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--color-neutral-400);">{{ pending.args }}</pre>
+        </sc-if>
+        <div class="dialog-actions" style="display: flex; gap: 8.4px; justify-content: flex-end;">
+          <button class="btn btn-secondary btn-sm" onClick="{{ denyPending }}">{{ pending.denyLabel }}</button>
+          <button class="btn btn-primary btn-sm" onClick="{{ allowPending }}">{{ pending.allowLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startPage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;overview&quot;,&quot;playground&quot;,&quot;labs&quot;,&quot;sandbox&quot;,&quot;reference&quot;],&quot;default&quot;:&quot;overview&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Behaviour&quot;},&quot;showTiming&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behaviour&quot;}}">
+const TICKETS = [
+  { id: 'T-1042', subject: 'Charged twice for the annual plan', customer: 'Marguerite Oyelaran', queue: 'billing', priority: 'high', status: 'open', owner: '—', plan: 'Team · annual', amount: '$148.00', cents: 14800, body: 'Renewal ran twice on the 3rd. Card statement shows both. She has been a customer for four years and is polite about it, which somehow makes it worse.' },
+  { id: 'T-1039', subject: 'SSO login loop after the SAML change', customer: 'Dev Ramanathan', queue: 'auth', priority: 'urgent', status: 'open', owner: '—', plan: 'Enterprise', amount: '—', cents: 0, body: 'Redirect bounces between IdP and app. Started after Friday metadata rotation. Forty seats blocked.' },
+  { id: 'T-1035', subject: 'CSV export truncates at 500 rows', customer: 'Ines Kovač', queue: 'data', priority: 'normal', status: 'pending', owner: 'Priya S.', plan: 'Pro', amount: '—', cents: 0, body: 'Export silently stops at 500. No error, no warning. She noticed because the totals were wrong.' },
+  { id: 'T-1031', subject: 'Seat count wrong after downgrade', customer: 'Tobias Vann', queue: 'billing', priority: 'normal', status: 'open', owner: '—', plan: 'Team · monthly', amount: '$32.00', cents: 3200, body: 'Downgraded from 12 to 6 seats; invoice still bills 12. Wants the difference back.' },
+  { id: 'T-1028', subject: 'Webhook retry storm', customer: 'Amara Diallo', queue: 'platform', priority: 'low', status: 'closed', owner: 'Kenji T.', plan: 'Enterprise', amount: '—', cents: 0, body: 'Resolved: their endpoint was 500-ing on duplicate ids. Backoff explained.' }
+];
+
+const TEMPLATES = {
+  register: `document.modelContext.registerTool({
+  name: 'say_hello',
+  description: 'Greets a person by name.',
+  inputSchema: {
+    type: 'object',
+    properties: { name: { type: 'string', description: 'Who to greet' } },
+    required: ['name']
+  },
+  annotations: { readOnlyHint: true },
+  async execute({ name }) {
+    return { content: [{ type: 'text', text: 'Hello, ' + name + '!' }] };
+  }
+});`,
+  batch: `// One call replaces the whole surface — the agent never sees a stale set.
+document.modelContext.provideContext({
+  tools: ['open', 'pending', 'closed'].map(status => ({
+    name: 'list_' + status,
+    description: 'List tickets that are ' + status + '.',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: true },
+    execute: () => ({ status, count: 3 })
+  }))
+});`,
+  gate: `document.modelContext.registerTool({
+  name: 'delete_workspace',
+  description: 'Permanently deletes a workspace and everything in it.',
+  inputSchema: {
+    type: 'object',
+    properties: { slug: { type: 'string' } },
+    required: ['slug']
+  },
+  annotations: { destructiveHint: true, idempotentHint: false },
+  async execute({ slug }) {
+    // The agent cannot answer this. Only the human at the keyboard can.
+    const ok = await document.modelContext.requestUserInteraction(
+      () => confirmInPage('Delete ' + slug + '? This cannot be undone.')
+    );
+    if (!ok) return { isError: true, content: [{ type: 'text', text: 'Refused by user.' }] };
+    return { content: [{ type: 'text', text: slug + ' deleted.' }] };
+  }
+});`,
+  probe: `// What is actually available in this tab?
+const mc = document.modelContext || navigator.modelContext;
+log({
+  present: !!mc,
+  native: !mc.__polyfill,
+  secureContext: window.isSecureContext,
+  origin: location.origin,
+  tools: mc.listTools().map(t => t.name)
+});`,
+  unregister: `document.modelContext.unregisterTool('say_hello');
+// Throws InvalidStateError if it was never there. Run it twice.`
+};
+
+const LABS = [
+  { id: 'register', n: '01', title: 'Register and unregister', tagline: 'the two-line version',
+    blurb: 'A tool is a name, a sentence of prose, a JSON Schema and a function. The prose is not documentation — it is how the model decides to call you at all.',
+    note: 'Write descriptions for a colleague who joined this morning. “Greets a person by name” beats “greeting handler v2”.',
+    code: TEMPLATES.register, run: 'register' },
+  { id: 'batch', n: '02', title: 'Batch context, per page state', tagline: 'provideContext',
+    blurb: 'registerTool adds one. provideContext declares the entire surface at once, clearing what came before — so a checkout page and a settings page can offer completely different verbs without leaking each other.',
+    note: 'Re-declare on every route change. A tool that no longer applies is worse than a missing one: the agent will try it.',
+    code: TEMPLATES.batch, run: 'batch' },
+  { id: 'consent', n: '03', title: 'Gate the dangerous verb', tagline: 'requestUserInteraction',
+    blurb: 'Some calls should never complete on an agent’s word alone. requestUserInteraction hands the turn back to the human, in your own UI, and resolves with what they decided.',
+    note: 'The browser also gates tool access itself. This is the second lock — yours, in your own words, at the moment of the act.',
+    code: TEMPLATES.gate, run: 'consent' },
+  { id: 'elicit', n: '04', title: 'Ask for the missing argument', tagline: 'elicitation mid-call',
+    blurb: 'The agent called issue_refund with no amount. You could throw. Better: pause inside execute, ask for the one thing you need, and finish the job.',
+    note: 'Elicit for facts the agent cannot know (a number on a paper statement). Do not elicit for things your schema should have required.',
+    code: `async execute({ ticket, cents }) {
+  if (cents == null) {
+    cents = await elicit({
+      prompt: 'How much should I refund on ' + ticket + '?',
+      schema: { type: 'integer', description: 'amount in cents' }
+    });
+  }
+  return refund(ticket, cents);
+}`, run: 'elicit' },
+  { id: 'structured', n: '05', title: 'Return structure, not prose', tagline: 'structuredContent',
+    blurb: 'A tool that returns a paragraph forces the model to re-parse English. Return typed data and the agent can act on it — and your own UI can render the same payload as a card.',
+    note: 'Ship both: structuredContent for the machine, one short content text for the transcript the human reads.',
+    code: `return {
+  structuredContent: {
+    ticket: 'T-1042', refunded_cents: 14800,
+    currency: 'EUR', status: 'refunded'
+  },
+  content: [{ type: 'text', text: 'Refunded €148.00 on T-1042.' }]
+};`, run: 'structured' },
+  { id: 'shared', n: '06', title: 'Two hands, one interface', tagline: 'collaborative surface',
+    blurb: 'The agent is not driving a headless copy of your app — it is in the tab with the user. Tools mutate the same state the person is looking at, so the UI must show what just moved.',
+    note: 'Flash the row. Scroll nothing. Never steal focus mid-typing — the human is still in there.',
+    code: `execute({ ticket, owner }) {
+  desk.assign(ticket, owner);      // same store the view reads
+  ui.flash(ticket);                // tell the human what moved
+  return { structuredContent: desk.get(ticket) };
+}`, run: 'shared' },
+  { id: 'annotations', n: '07', title: 'Say what a tool costs', tagline: 'annotation hints',
+    blurb: 'readOnlyHint, destructiveHint, idempotentHint. They cost you one line and they change how an agent plans: safe reads get tried freely, destructive verbs get confirmed, idempotent ones get retried without fear of double-charging.',
+    note: 'Hints are advisory. Enforce the same truth server-side — an annotation is a promise to the planner, not a permission check.',
+    code: `annotations: {
+  readOnlyHint: false,
+  destructiveHint: true,
+  idempotentHint: false,
+  openWorldHint: false
+}`, run: 'annotations' },
+  { id: 'detect', n: '08', title: 'Degrade without drama', tagline: 'feature detection',
+    blurb: 'One browser ships it today. Detect the object, never the user agent, and when it is absent fall back to the structured data you should be emitting anyway.',
+    note: 'No agent present is the common case. Nothing about your page should look different to a human when the API is missing.',
+    code: TEMPLATES.probe, run: 'probe' },
+  { id: 'security', n: '09', title: 'The parts you don’t control', tagline: 'browser-mediated trust',
+    blurb: 'Secure context only. Same-origin only. Tool access is mediated by the browser, and every tool you declare is reachable by whatever agent the user brought — treat arguments as hostile input, exactly like a public endpoint.',
+    note: 'The threat model is prompt injection from page content. Authorise on the server; the tool boundary is not an auth boundary.',
+    code: `// Available only where the browser says so.
+if (!window.isSecureContext) return;      // https / localhost
+// Same-origin: an iframe from elsewhere cannot register into your surface.
+// Assume every argument came from a stranger.
+const cents = Math.min(Number(input.cents) | 0, MAX_REFUND);`, run: 'security' },
+  { id: 'progress', n: '10', title: 'Long jobs, visible middles', tagline: 'streaming progress',
+    blurb: 'Bulk work should not look like a hang. Report progress as you go and both sides — the agent’s transcript and your own UI — get a moving number instead of a spinner.',
+    note: 'Set an honest total. An agent that knows a job is 40% done waits; one that knows nothing retries and doubles your work.',
+    code: `async execute({ ids }, { reportProgress }) {
+  for (const [i, id] of ids.entries()) {
+    await reindex(id);
+    reportProgress({ progress: i + 1, total: ids.length });
+  }
+  return { structuredContent: { reindexed: ids.length } };
+}`, run: 'progress' }
+];
+
+const REF = [
+  { title: 'ModelContext', blurb: 'The singleton. Installed on both document and navigator here; the draft has settled on document.',
+    rows: [
+      { member: 'registerTool(tool)', spec: 'Adds one tool. Throws InvalidStateError on a duplicate name, empty name/description or invalid schema.', delta: 'Same, and the throw is logged to Activity with the offending name.', ok: true },
+      { member: 'unregisterTool(name)', spec: 'Removes it. InvalidStateError if it was never registered.', delta: 'Same.', ok: true },
+      { member: 'provideContext({ tools })', spec: 'Replaces the entire declared set.', delta: 'Same. The registry timeline records the diff, not just the result.', ok: true },
+      { member: 'listTools()', spec: 'Not in the draft — agents enumerate through the browser.', delta: 'Polyfill-only convenience, so a playground can render a sidebar.', ok: false }
+    ] },
+  { title: 'ModelContextTool', blurb: 'The descriptor an agent reads before it decides anything.',
+    rows: [
+      { member: 'name / description', spec: 'Required strings. The description is the whole selection signal.', delta: 'Same. Empty strings rejected.', ok: true },
+      { member: 'inputSchema', spec: 'JSON Schema object describing arguments.', delta: 'Validated shallowly: types, required, enum. Nested objects pass unchecked.', ok: false },
+      { member: 'annotations', spec: 'readOnlyHint, destructiveHint, idempotentHint, openWorldHint — advisory.', delta: 'Surfaced as badges, and destructive tools are consent-gated by this page.', ok: true },
+      { member: 'execute(args, extra)', spec: 'Returns content[] and/or structuredContent; isError marks a failure.', delta: 'Also passes reportProgress and elicit in extra — playground conveniences, not spec.', ok: false }
+    ] },
+  { title: 'Interaction', blurb: 'Handing the turn back to the person in the chair.',
+    rows: [
+      { member: 'requestUserInteraction(cb)', spec: 'Runs a callback that may show UI and resolves with its result.', delta: 'Renders the modal on this page; resolves false on dismiss.', ok: true },
+      { member: 'elicitation', spec: 'Under discussion in the draft; no settled shape.', delta: 'Modelled here as an elicit() helper on extra so lab 04 is runnable.', ok: false },
+      { member: 'consent UI', spec: 'Browser-owned; the page cannot style or skip it.', delta: 'Simulated. Real Chrome will show its own prompt in front of yours.', ok: false }
+    ] }
+];
+
+const GAPS = [
+  'No real agent runtime — the sandbox agent is a scripted planner. Tool execution, schemas, throws and progress are genuine; the reasoning is theatre.',
+  'Schema validation is shallow. Nested objects and array item types are accepted without checking.',
+  'Native Chrome consent prompts sit in front of anything this page renders; you will see two gates on a real build.',
+  'Snippets are evaluated with Function in this tab, so they can reach the page. Fine for a lab, not a pattern to copy.'
+];
+
+class Component extends DCLogic {
+  // React renders before componentDidMount installs the polyfill, so the
+  // registry has to exist from the start or the first render throws.
+  map = new Map();
+
+  state = {
+    page: 'overview', tabIdx: 0, templateSel: '',
+    tabs: [
+      { name: 'scratch.js', code: TEMPLATES.register },
+      { name: 'gate.js', code: TEMPLATES.gate },
+      { name: 'probe.js', code: TEMPLATES.probe }
+    ],
+    tools: [], timeline: [], log: [], selected: null, args: {},
+    verdict: 'Ready.', verdictKind: 'idle',
+    tickets: TICKETS.map(t => ({ ...t })), openId: null, flashId: null, published: false,
+    labId: 'register', labResult: '— not run yet —', labOk: null,
+    transcript: [], agentBusy: false, pending: null
+  };
+
+  componentDidMount() {
+    // Detect BEFORE installing anything, so a previous mount's shim can't be mistaken for native.
+    this.native = false;
+    try {
+      this.native = (typeof Document !== 'undefined' && 'modelContext' in Document.prototype) ||
+        (typeof Navigator !== 'undefined' && 'modelContext' in Navigator.prototype);
+    } catch (e) { this.native = false; }
+    this.mc = this.install();
+    this.setState({ page: this.props.startPage || 'overview' });
+    this.publish(true);
+  }
+
+  // ── polyfill ────────────────────────────────────────────
+  install() {
+    const self = this;
+    const map = new Map();
+    // Keep a handle on the real thing (if any) so we can mirror into it.
+    this.nativeMC = null;
+    if (this.native) {
+      try { this.nativeMC = document.modelContext || navigator.modelContext || null; } catch (e) { this.nativeMC = null; }
+    }
+    const bridge = (method, arg) => {
+      if (!self.nativeMC || typeof self.nativeMC[method] !== 'function') return;
+      try { self.nativeMC[method](arg); } catch (e) { self.logIt('bridge', 'native ' + method + ' rejected it', String(e.name || 'Error'), String(e.message || e), 0); }
+    };
+    const mc = {
+      __polyfill: true,
+      registerTool(d) {
+        if (!d || typeof d.name !== 'string' || !d.name) throw new TypeError('registerTool: name is required');
+        if (!d.description) throw new TypeError('registerTool: description is required');
+        if (map.has(d.name)) { const e = new Error('a tool named ' + d.name + ' is already registered'); e.name = 'InvalidStateError'; throw e; }
+        map.set(d.name, d);
+        bridge('registerTool', d);
+        self.push('register', d.name, self.annOf(d));
+        self.sync();
+      },
+      unregisterTool(name) {
+        if (!map.has(name)) { const e = new Error('no tool named ' + name); e.name = 'InvalidStateError'; throw e; }
+        map.delete(name);
+        bridge('unregisterTool', name);
+        self.push('unregister', name, '');
+        self.sync();
+      },
+      provideContext(ctx) {
+        const list = (ctx && ctx.tools) || [];
+        const before = map.size;
+        map.clear();
+        list.forEach(t => map.set(t.name, t));
+        bridge('provideContext', { tools: list });
+        self.push('context', list.length + ' tools declared', 'replaced ' + before);
+        self.sync();
+      },
+      listTools: () => Array.from(map.values()),
+      requestUserInteraction: cb => Promise.resolve(cb())
+    };
+
+    // `modelContext` is a prototype accessor in native builds, so plain assignment
+    // is a silent no-op. An own property shadows it.
+    const shadow = (target, label) => {
+      try {
+        Object.defineProperty(target, 'modelContext', { value: mc, configurable: true, writable: true });
+        return target.modelContext === mc;
+      } catch (e) { return false; }
+    };
+    this.shadowed = { doc: shadow(document), nav: shadow(navigator) };
+    // Whatever the globals ended up as, snippets get a scope where they resolve to us.
+    this.docShim = this.shadowed.doc ? document : this.proxy(document, mc);
+    this.navShim = this.shadowed.nav ? navigator : this.proxy(navigator, mc);
+    this.map = map;
+    return mc;
+  }
+
+  proxy(real, mc) {
+    try {
+      return new Proxy(real, {
+        get(t, k) {
+          if (k === 'modelContext') return mc;
+          const v = t[k];
+          return typeof v === 'function' ? v.bind(t) : v;
+        },
+        set(t, k, v) { if (k !== 'modelContext') t[k] = v; return true; }
+      });
+    } catch (e) {
+      return { modelContext: mc };
+    }
+  }
+
+  annOf(t) {
+    const a = t.annotations || {};
+    if (a.destructiveHint) return 'destructive';
+    if (a.readOnlyHint) return 'read-only';
+    if (a.idempotentHint) return 'idempotent';
+    return 'write';
+  }
+
+  sync() { this.setState({ tools: Array.from(this.map.values()) }); }
+
+  push(kind, name, meta) {
+    const ev = { kind, name, at: this.clock(), sign: kind === 'unregister' ? '−' : '+', meta };
+    this.setState(s => ({ timeline: [ev, ...s.timeline].slice(0, 14) }));
+    this.logIt(kind, name, meta ? String(meta) : '', null, 0);
+  }
+
+  clock() { const d = new Date(); return d.toTimeString().slice(0, 8); }
+
+  logIt(kind, label, meta, body, ms) {
+    const e = { id: Math.random().toString(36).slice(2), kind, label, meta, body, ms, at: this.clock() };
+    this.setState(s => ({ log: [e, ...s.log].slice(0, 60) }));
+  }
+
+  // ── desk tools ──────────────────────────────────────────
+  deskTools() {
+    const self = this;
+    const t = (name, description, ann, props, required, execute) => ({
+      name, description, annotations: ann,
+      inputSchema: { type: 'object', properties: props || {}, required: required || [] },
+      execute
+    });
+    const find = id => self.state.tickets.find(x => x.id === id);
+    const base = [
+      t('list_tickets', 'List helpdesk tickets, optionally filtered by status or queue.', { readOnlyHint: true },
+        { status: { type: 'string', enum: ['any', 'open', 'pending', 'closed'], description: 'status filter' },
+          queue: { type: 'string', description: 'billing, auth, data, platform' } }, [],
+        ({ status, queue }) => {
+          const rows = self.state.tickets.filter(x => (!status || status === 'any' || x.status === status) && (!queue || x.queue === queue));
+          return { structuredContent: { count: rows.length, tickets: rows.map(x => ({ id: x.id, subject: x.subject, priority: x.priority, status: x.status, owner: x.owner })) } };
+        }),
+      t('get_ticket', 'Fetch one ticket in full, including the customer’s message.', { readOnlyHint: true },
+        { ticket: { type: 'string', description: 'ticket id, e.g. T-1042' } }, ['ticket'],
+        ({ ticket }) => {
+          const x = find(ticket); if (!x) throw new Error('no ticket ' + ticket);
+          self.flash(ticket);
+          return { structuredContent: { id: x.id, subject: x.subject, customer: x.customer, queue: x.queue, priority: x.priority, status: x.status, disputed: x.amount, body: x.body } };
+        }),
+      t('assign_ticket', 'Assign a ticket to a support agent. Assigning twice is harmless.', { idempotentHint: true },
+        { ticket: { type: 'string' }, owner: { type: 'string', enum: ['Priya S.', 'Kenji T.', 'you'] } }, ['ticket'],
+        async ({ ticket, owner }, extra) => {
+          if (!owner) owner = await extra.elicit('Who should take ' + ticket + '?', 'Priya S. / Kenji T. / you', 'Priya S.');
+          self.mutate(ticket, { owner, status: 'pending' });
+          return { structuredContent: { id: ticket, owner, status: 'pending' } };
+        }),
+      t('search_knowledge', 'Search internal runbooks for a fix. Reaches an external index.', { readOnlyHint: true, openWorldHint: true },
+        { q: { type: 'string' } }, ['q'],
+        ({ q }) => ({ structuredContent: { query: q, hits: [{ doc: 'runbook/saml-rotation', score: 0.91 }, { doc: 'billing/duplicate-charge', score: 0.77 }] } }))
+    ];
+    const opened = [
+      t('reply_to_ticket', 'Post a reply to the customer. Long replies stream as they render.', {},
+        { ticket: { type: 'string' }, body: { type: 'string' } }, ['ticket', 'body'],
+        async ({ ticket, body }, extra) => {
+          for (let i = 1; i <= 4; i++) { await self.wait(140); extra.reportProgress(i, 4); }
+          self.mutate(ticket, { status: 'pending' });
+          return { structuredContent: { id: ticket, replied: true, chars: (body || '').length } };
+        }),
+      t('issue_refund', 'Refund money to the customer. Irreversible; needs a human.', { destructiveHint: true },
+        { ticket: { type: 'string' }, cents: { type: 'integer', description: 'amount in cents' } }, ['ticket'],
+        async ({ ticket, cents }, extra) => {
+          const x = find(ticket);
+          if (cents == null || cents === '') cents = await extra.elicit('How much should I refund on ' + ticket + '?', 'amount in cents', String(x ? x.cents : 0));
+          cents = Math.max(0, parseInt(cents, 10) || 0);
+          const ok = await extra.consent('Refund ' + self.money(cents) + ' to ' + (x ? x.customer : ticket) + '?', 'Money leaves the account the moment you allow this. The agent cannot answer for you.', { tool: 'issue_refund', ticket, cents });
+          if (!ok) return { isError: true, content: [{ type: 'text', text: 'Refund refused by the human at the keyboard.' }] };
+          self.mutate(ticket, { status: 'refunded', refunded: cents });
+          return { structuredContent: { id: ticket, refunded_cents: cents, currency: 'USD', status: 'refunded' }, content: [{ type: 'text', text: 'Refunded ' + self.money(cents) + ' on ' + ticket + '.' }] };
+        }),
+      t('escalate_ticket', 'Escalate to engineering with a reason.', {},
+        { ticket: { type: 'string' }, reason: { type: 'string' } }, ['ticket', 'reason'],
+        ({ ticket, reason }) => { self.mutate(ticket, { status: 'escalated', owner: 'eng' }); return { structuredContent: { id: ticket, escalated: true, reason } }; })
+    ];
+    return this.state.openId ? base.concat(opened) : base;
+  }
+
+  money(c) { return '$' + (c / 100).toFixed(2); }
+  wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  mutate(id, patch) {
+    this.setState(s => ({ tickets: s.tickets.map(t => t.id === id ? { ...t, ...patch } : t) }));
+    this.flash(id);
+  }
+
+  flash(id) {
+    this.setState({ flashId: id });
+    setTimeout(() => { if (this.state.flashId === id) this.setState({ flashId: null }); }, 1200);
+  }
+
+  publish(silent) {
+    if (!this.mc) return;
+    this.mc.provideContext({ tools: this.deskTools() });
+    this.setState({ published: true });
+    if (!silent) this.logIt('context', 'desk surface re-declared', this.map.size + ' tools', null, 0);
+  }
+
+  // ── running things ──────────────────────────────────────
+  async exec(tool, args, source) {
+    const t0 = performance.now();
+    const extra = {
+      reportProgress: (p, total) => this.logIt('progress', tool.name + ' ' + p + '/' + total, source, null, 0),
+      elicit: (prompt, label, seed) => this.ask({ kind: 'elicit', kicker: 'elicitation · tool needs input', title: prompt, body: 'The agent did not supply this and cannot invent it. ' + tool.name + ' is paused mid-call, waiting on you.', inputLabel: label, value: seed || '', placeholder: label, allowLabel: 'Send it', denyLabel: 'Cancel call' }),
+      consent: (title, body, args2) => this.ask({ kind: 'consent', kicker: 'destructive · browser hands you the turn', title, body, args: JSON.stringify(args2, null, 2), allowLabel: 'Allow once', denyLabel: 'Refuse' })
+    };
+    try {
+      const out = await tool.execute(args, extra);
+      const ms = Math.round(performance.now() - t0);
+      const err = out && out.isError;
+      this.logIt(err ? 'refused' : 'result', tool.name, source + ' · ' + ms + 'ms', JSON.stringify(out && out.structuredContent ? out.structuredContent : out, null, 2), ms);
+      return out;
+    } catch (e) {
+      const ms = Math.round(performance.now() - t0);
+      this.logIt('throw', tool.name + ' → ' + (e.name || 'Error'), source + ' · ' + ms + 'ms', String(e.message || e), ms);
+      return { isError: true, error: String(e.message || e) };
+    }
+  }
+
+  ask(spec) {
+    return new Promise(resolve => {
+      this.setState({ pending: { ...spec, resolve } });
+      this.logIt(spec.kind === 'consent' ? 'consent' : 'elicit', spec.title, 'waiting on the human', null, 0);
+    });
+  }
+
+  settle(ok) {
+    const p = this.state.pending;
+    if (!p) return;
+    this.setState({ pending: null });
+    if (p.kind === 'consent') { this.logIt(ok ? 'allowed' : 'refused', p.title, ok ? 'human allowed it' : 'human refused', null, 0); p.resolve(ok); }
+    else { this.logIt(ok ? 'elicited' : 'refused', p.title, ok ? String(p.value) : 'cancelled', null, 0); p.resolve(ok ? p.value : null); }
+  }
+
+  runCode(code, label) {
+    const t0 = performance.now();
+    const before = this.map.size;
+    try {
+      const fn = new Function('modelContext', 'document', 'navigator', 'log', 'confirmInPage', 'elicit', '"use strict";' + code);
+      const out = fn(this.mc, this.docShim, this.navShim, v => this.logIt('log', label, '', typeof v === 'string' ? v : JSON.stringify(v, null, 2), 0),
+        msg => this.ask({ kind: 'consent', kicker: 'requestUserInteraction', title: msg, body: 'Your page renders this, not the browser. Resolves with what the human chose.', allowLabel: 'Confirm', denyLabel: 'Cancel' }),
+        (spec) => this.ask({ kind: 'elicit', kicker: 'elicitation', title: (spec && spec.prompt) || 'Value needed', body: 'Paused mid-call.', inputLabel: (spec && spec.schema && spec.schema.description) || 'value', value: '', allowLabel: 'Send it', denyLabel: 'Cancel' }));
+      const ms = Math.round(performance.now() - t0);
+      const delta = this.map.size - before;
+      const moved = delta === 0 ? 'registry unchanged' : (delta > 0 ? '+' : '') + delta + ' tool' + (Math.abs(delta) === 1 ? '' : 's');
+      const msg = 'Ran in ' + ms + 'ms · ' + moved + ' · registry now ' + this.map.size;
+      this.setState({ verdict: msg, verdictKind: delta === 0 ? 'idle' : 'ok' });
+      if (out && typeof out.then === 'function') out.catch(e => this.fail(e));
+      return { ok: true, ms, out };
+    } catch (e) {
+      this.fail(e);
+      return { ok: false, error: e };
+    }
+  }
+
+  fail(e) {
+    const line = (e.name || 'Error') + ': ' + (e.message || e);
+    this.setState({ verdict: line, verdictKind: 'bad' });
+    this.logIt('throw', line, 'snippet', e.stack ? String(e.stack).split('\n').slice(0, 3).join('\n') : null, 0);
+  }
+
+  // ── scripted agent ──────────────────────────────────────
+  say(role, text, body, bar) {
+    this.setState(s => ({ transcript: [...s.transcript, { id: Math.random().toString(36).slice(2), role, text, body, bar }] }));
+  }
+
+  async runTask(id) {
+    if (this.state.agentBusy) return;
+    this.setState({ agentBusy: true, transcript: [] });
+    const call = async (name, args, why) => {
+      const tool = this.map.get(name);
+      if (!tool) { this.say('agent', 'No tool named ' + name + ' is declared here. Stopping.'); return null; }
+      this.say('agent', why);
+      this.say('call', name + '(' + JSON.stringify(args) + ')');
+      const out = await this.exec(tool, args, 'agent');
+      const payload = out && (out.structuredContent || out);
+      this.say('tool', name + ' returned', JSON.stringify(payload, null, 2));
+      await this.wait(320);
+      return payload;
+    };
+    try {
+      if (id === 'refund') {
+        this.say('user', 'Marguerite was charged twice. Sort it out.');
+        await call('list_tickets', { status: 'open', queue: 'billing' }, 'Reading the billing queue first — that call is annotated read-only, so I can try it freely.');
+        await call('get_ticket', { ticket: 'T-1042' }, 'T-1042 matches. Pulling the whole thing before I touch money.');
+        this.setState({ openId: 'T-1042' }); this.publish(true);
+        this.say('agent', 'Opening the ticket changed the declared surface — reply_to_ticket, issue_refund and escalate_ticket exist now.');
+        await this.wait(240);
+        const r = await call('issue_refund', { ticket: 'T-1042' }, 'issue_refund is marked destructive and I am missing the amount. Asking for both.');
+        if (r && r.refunded_cents) {
+          await call('reply_to_ticket', { ticket: 'T-1042', body: 'Refunded the duplicate renewal — sorry about that. It should land in 3–5 days.' }, 'Money moved. Telling her, and reporting progress while the reply posts.');
+          this.say('agent', 'Done: refunded, replied, ticket left pending her confirmation. I never guessed a pixel.');
+        } else {
+          this.say('agent', 'Refused, so I stopped. Nothing was charged back and the ticket is untouched.');
+        }
+      } else if (id === 'triage') {
+        this.say('user', 'Triage the open queue for me.');
+        const all = await call('list_tickets', { status: 'open' }, 'One read to see the whole board.');
+        await call('assign_ticket', { ticket: 'T-1039', owner: 'Kenji T.' }, 'T-1039 is urgent and blocks forty seats. Kenji owns auth.');
+        await call('assign_ticket', { ticket: 'T-1031' }, 'T-1031 next — but I have no basis for choosing an owner, so I will ask instead of inventing one.');
+        this.say('agent', 'Two assigned. assign_ticket is idempotent, so re-running this plan cannot double-book anyone.' + (all ? ' Queue was ' + all.count + ' open.' : ''));
+      } else if (id === 'audit') {
+        this.say('user', 'What is blocking us right now?');
+        const rows = await call('list_tickets', { status: 'any' }, 'Reading everything, then summarising from the structured payload rather than from the screen.');
+        await call('search_knowledge', { q: 'SAML metadata rotation login loop' }, 'One tool is annotated open-world — it leaves your origin. Worth knowing before I call it.');
+        this.say('agent', 'Blocking: T-1039 (auth, urgent, 40 seats) and two billing disputes worth $180. ' + (rows ? rows.count + ' tickets total.' : '') + ' Every number came from typed fields, so none of it is a hallucinated reading of a table.');
+      }
+    } finally {
+      this.setState({ agentBusy: false });
+    }
+  }
+
+  // ── render inputs ───────────────────────────────────────
+  renderVals() {
+    const s = this.state;
+    const pages = [
+      { id: 'overview', label: 'Overview', glyph: '◈' },
+      { id: 'playground', label: 'Playground', glyph: '⌨' },
+      { id: 'labs', label: 'Capability labs', glyph: '⚗' },
+      { id: 'sandbox', label: 'CRM sandbox', glyph: '☰' },
+      { id: 'reference', label: 'Reference', glyph: '§' }
+    ];
+    const lab = LABS.find(l => l.id === s.labId) || LABS[0];
+    const tool = s.selected ? this.map.get(s.selected) : null;
+    const props = tool && tool.inputSchema ? (tool.inputSchema.properties || {}) : {};
+    const required = tool && tool.inputSchema ? (tool.inputSchema.required || []) : [];
+    const annTag = a => a === 'destructive' ? 'tag-outline' : a === 'read-only' ? 'tag-neutral' : 'tag-accent';
+    const kindColor = k => ({ register: '#9184d9', unregister: '#8f93a6', context: '#a7a1db', result: '#8fd9a8', throw: '#d98d8d', refused: '#d9b98d', consent: '#d9b98d', allowed: '#8fd9a8', elicit: '#d9b98d', elicited: '#8fd9a8', progress: '#a7a1db', log: '#cfd3e5' })[k] || '#cfd3e5';
+    const showTiming = this.props.showTiming !== false;
+
+    return {
+      today: 'August 2026',
+      nav: pages.map(p => ({
+        ...p, dim: s.page === p.id ? '1' : '0.55',
+        color: s.page === p.id ? 'var(--color-accent-200)' : 'var(--color-neutral-400)',
+        mark: s.page === p.id ? 'var(--color-accent)' : 'transparent',
+        go: () => this.setState({ page: p.id })
+      })),
+      isOverview: s.page === 'overview', isPlayground: s.page === 'playground',
+      isLabs: s.page === 'labs', isSandbox: s.page === 'sandbox', isReference: s.page === 'reference',
+      goPlayground: () => this.setState({ page: 'playground' }),
+      goSandbox: () => this.setState({ page: 'sandbox' }),
+
+      statusDot: this.native ? '#8fd9a8' : 'var(--color-accent)',
+      statusLabel: this.native ? 'Native API found' : 'Polyfill active',
+      statusNote: this.native
+        ? 'This browser ships modelContext. The registry you see is the notebook\u2019s own mirror, and every tool is forwarded to the native one too.'
+        : 'No native API here, so the notebook installed its own. Everything on these pages still runs.',
+
+      steps: [
+        { n: '01', who: 'your page', title: 'Declare', code: 'registerTool({\n  name, description,\n  inputSchema, execute\n})', note: 'The description is the API. Write it like prose.' },
+        { n: '02', who: 'the browser', title: 'Mediate', code: 'secure context ✓\nsame origin ✓\nuser consent ✓', note: 'You do not get to skip this, which is the point.' },
+        { n: '03', who: 'the agent', title: 'Invoke', code: 'issue_refund({\n  ticket: "T-1042",\n  cents: 14800\n})', note: 'Typed arguments in, typed payload out. No clicking.' }
+      ],
+      support: [
+        { name: 'Chrome 146+', status: 'shipped', tagClass: 'tag-accent', detail: 'Native navigator.modelContext behind the WebMCP flag in early preview.' },
+        { name: 'Edge', status: 'expected', tagClass: 'tag-neutral', detail: 'Same engine, same authors on the spec. Follows Chrome.' },
+        { name: 'Firefox · Safari', status: 'engaged', tagClass: 'tag-outline', detail: 'At the table in the W3C group; no shipping commitment yet.' },
+        { name: 'Everywhere else', status: 'polyfill', tagClass: 'tag-accent-2', detail: 'A shim gets you the shape of the API for development — not the browser-enforced parts.' }
+      ],
+
+      // playground
+      tabs: s.tabs.map((t, i) => ({
+        name: t.name, select: () => this.setState({ tabIdx: i }),
+        color: i === s.tabIdx ? 'var(--color-accent-200)' : 'var(--color-neutral-500)',
+        bg: i === s.tabIdx ? '#12141f' : 'transparent',
+        mark: i === s.tabIdx ? 'var(--color-accent)' : 'transparent'
+      })),
+      code: s.tabs[s.tabIdx].code,
+      onCode: e => { const v = e.target.value; this.setState(st => ({ tabs: st.tabs.map((t, i) => i === st.tabIdx ? { ...t, code: v } : t) })); },
+      onEditorKey: e => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); this.runCode(this.state.tabs[this.state.tabIdx].code, 'snippet'); } },
+      runSnippet: () => this.runCode(s.tabs[s.tabIdx].code, 'snippet'),
+      templateSel: s.templateSel,
+      templateOpts: [
+        { id: 'register', label: 'registerTool' }, { id: 'batch', label: 'provideContext (batch)' },
+        { id: 'gate', label: 'consent-gated destructive tool' }, { id: 'probe', label: 'feature detection' },
+        { id: 'unregister', label: 'unregisterTool' }
+      ],
+      onTemplate: e => { const id = e.target.value; if (!TEMPLATES[id]) return; this.setState(st => ({ templateSel: '', tabs: st.tabs.map((t, i) => i === st.tabIdx ? { ...t, code: TEMPLATES[id] } : t) })); },
+      clearTools: () => { this.mc.provideContext({ tools: [] }); this.setState({ selected: null, published: false }); },
+      verdict: s.verdict,
+      verdictColor: s.verdictKind === 'bad' ? '#d98d8d' : s.verdictKind === 'ok' ? '#8fd9a8' : 'var(--color-neutral-500)',
+      verdictBg: s.verdictKind === 'bad' ? 'rgba(217,141,141,.07)' : 'transparent',
+
+      toolCards: s.tools.map(t => {
+        const ann = this.annOf(t);
+        return { name: t.name, description: t.description, ann, annClass: annTag(ann),
+          border: s.selected === t.name ? 'var(--color-accent)' : 'var(--color-neutral-900)',
+          bg: s.selected === t.name ? 'rgba(145,132,217,.08)' : 'transparent',
+          select: () => this.setState({ selected: t.name, args: {} }) };
+      }),
+      noTools: s.tools.length === 0,
+      toolCountLabel: s.tools.length + ' declared',
+      timeline: s.timeline.map(ev => ({ ...ev, color: ev.kind === 'unregister' ? '#8f93a6' : 'var(--color-accent)' })),
+
+      hasSelection: !!tool,
+      sel: tool ? { name: tool.name, description: tool.description,
+        annNote: this.annOf(tool) === 'destructive' ? 'destructive — this one will stop and ask you' : this.annOf(tool) === 'read-only' ? 'read-only — safe to hammer' : this.annOf(tool) === 'idempotent' ? 'idempotent — retries are harmless' : 'writes state' } : {},
+      fields: Object.keys(props).map(k => {
+        const p = props[k];
+        return { key: k, label: k + (required.includes(k) ? ' *' : ''),
+          hint: p.type + (p.description ? ' · ' + p.description : ''),
+          placeholder: p.enum ? p.enum.join(' | ') : p.type,
+          isEnum: !!p.enum, isPlain: !p.enum, options: p.enum || [],
+          value: s.args[k] == null ? '' : s.args[k],
+          onInput: e => { const v = e.target.value; this.setState(st => ({ args: { ...st.args, [k]: v } })); } };
+      }),
+      closeInvoke: () => this.setState({ selected: null }),
+      invoke: async () => {
+        if (!tool) return;
+        const coerced = {};
+        Object.keys(props).forEach(k => {
+          const raw = s.args[k];
+          if (raw === '' || raw == null) return;
+          const ty = props[k].type;
+          coerced[k] = ty === 'integer' || ty === 'number' ? Number(raw) : ty === 'boolean' ? raw === 'true' : raw;
+        });
+        const missing = required.filter(k => coerced[k] === undefined);
+        if (missing.length) { this.logIt('throw', tool.name + ' → ValidationError', 'invoke panel', 'missing required: ' + missing.join(', '), 0); return; }
+        await this.exec(tool, coerced, 'invoke panel');
+      },
+      logRows: s.log.map(e => ({ id: e.id, kind: e.kind, label: e.label, color: kindColor(e.kind),
+        meta: showTiming ? (e.meta ? e.meta : e.at) : (e.meta || ''), hasBody: !!e.body, body: e.body })),
+      noLog: s.log.length === 0,
+      logMeta: s.log.length + ' entries',
+      clearLog: () => this.setState({ log: [] }),
+
+      // labs
+      labList: LABS.map(l => ({ n: l.n, title: l.title, select: () => this.setState({ labId: l.id, labResult: '— not run yet —', labOk: null }),
+        bg: s.labId === l.id ? 'rgba(145,132,217,.12)' : 'transparent',
+        color: s.labId === l.id ? 'var(--color-accent-200)' : 'var(--color-neutral-300)' })),
+      lab,
+      labResult: s.labResult,
+      labResultColor: s.labOk === false ? '#d98d8d' : s.labOk ? '#8fd9a8' : 'var(--color-neutral-500)',
+      sendLabToEditor: () => { this.setState(st => ({ page: 'playground', tabs: st.tabs.map((t, i) => i === st.tabIdx ? { ...t, code: lab.code } : t) })); },
+      runLab: async () => {
+        const out = await this.execLab(lab);
+        this.setState({ labResult: out.text, labOk: out.ok });
+      },
+
+      // sandbox
+      ticketRows: s.tickets.map(t => ({
+        ...t, flash: s.flashId === t.id ? 'noct-touched' : '',
+        bg: s.openId === t.id ? 'rgba(145,132,217,.10)' : s.flashId === t.id ? 'rgba(145,132,217,.16)' : 'transparent',
+        prioClass: t.priority === 'urgent' ? 'tag-outline' : t.priority === 'high' ? 'tag-accent' : 'tag-neutral',
+        open: () => { const next = s.openId === t.id ? null : t.id; this.setState({ openId: next }, () => this.publish(false)); }
+      })),
+      hasOpenTicket: !!s.openId,
+      open: s.tickets.find(t => t.id === s.openId) || {},
+      closeTicket: () => this.setState({ openId: null }, () => this.publish(false)),
+      publishLabel: 'Re-declare surface (' + this.map.size + ')',
+      publishTools: () => this.publish(false),
+      resetDesk: () => this.setState({ tickets: TICKETS.map(t => ({ ...t })), openId: null, transcript: [], log: [] }, () => this.publish(true)),
+      deskTools: s.tools.map(t => { const ann = this.annOf(t); return { name: t.name, description: t.description, ann, annClass: annTag(ann) }; }),
+      tasks: [
+        { id: 'refund', prompt: 'Marguerite was charged twice — sort it out', run: () => this.runTask('refund') },
+        { id: 'triage', prompt: 'Triage the open queue', run: () => this.runTask('triage') },
+        { id: 'audit', prompt: 'What is blocking us right now?', run: () => this.runTask('audit') }
+      ],
+      transcript: s.transcript.map(m => ({
+        id: m.id, role: m.role === 'call' ? 'tool call' : m.role, text: m.text,
+        color: m.role === 'user' ? 'var(--color-neutral-400)' : m.role === 'agent' ? 'var(--color-accent-300)' : m.role === 'call' ? '#d9b98d' : '#8fd9a8',
+        hasBody: !!m.body, body: m.body, hasBar: !!m.bar, bar: m.bar
+      })),
+      noTranscript: s.transcript.length === 0,
+      agentDot: s.agentBusy ? '#d9b98d' : 'var(--color-neutral-700)',
+      agentStatus: s.agentBusy ? 'working — watch the queue and the activity log' : 'idle · sees ' + this.map.size + ' declared tools',
+
+      // reference
+      refSections: REF.map(sec => ({ title: sec.title, blurb: sec.blurb,
+        rows: sec.rows.map(r => ({ ...r, deltaColor: r.ok ? 'var(--color-neutral-300)' : '#d9b98d' })) })),
+      gaps: GAPS,
+
+      // overlay
+      hasPending: !!s.pending,
+      pending: s.pending ? { ...s.pending, needsInput: s.pending.kind === 'elicit', hasArgs: !!s.pending.args } : {},
+      onPendingInput: e => { const v = e.target.value; this.setState(st => ({ pending: { ...st.pending, value: v } })); },
+      allowPending: () => this.settle(true),
+      denyPending: () => this.settle(false)
+    };
+  }
+
+  async execLab(lab) {
+    const name = 'lab_' + lab.id;
+    try {
+      if (lab.run === 'register' || lab.run === 'batch' || lab.run === 'gate' || lab.run === 'probe') {
+        const code = lab.run === 'probe' ? TEMPLATES.probe : lab.code;
+        try { this.mc.unregisterTool('say_hello'); } catch (e) { /* fine */ }
+        try { this.mc.unregisterTool('delete_workspace'); } catch (e) { /* fine */ }
+        const r = this.runCode(code, 'lab ' + lab.n);
+        if (!r.ok) return { ok: false, text: (r.error.name || 'Error') + ': ' + r.error.message };
+        return { ok: true, text: 'Ran clean in ' + r.ms + 'ms.\nRegistry is now ' + this.map.size + ' tools — check the playground sidebar.' };
+      }
+      if (lab.run === 'elicit') {
+        const v = await this.ask({ kind: 'elicit', kicker: 'elicitation · tool needs input', title: 'How much should I refund on T-1042?', body: 'issue_refund is paused mid-call. The agent has no way to know this number.', inputLabel: 'amount in cents', value: '14800', placeholder: '14800', allowLabel: 'Send it', denyLabel: 'Cancel call' });
+        return v == null ? { ok: false, text: 'Cancelled. execute() returned isError instead of guessing.' } : { ok: true, text: 'execute() resumed with cents = ' + v + '\n→ ' + JSON.stringify({ refunded_cents: parseInt(v, 10) || 0, status: 'refunded' }) };
+      }
+      if (lab.run === 'consent') {
+        const ok = await this.ask({ kind: 'consent', kicker: 'destructive · handing back the turn', title: 'Delete workspace “atlas-prod”?', body: 'Irreversible. The agent asked; only you can answer.', args: JSON.stringify({ tool: 'delete_workspace', slug: 'atlas-prod' }, null, 2), allowLabel: 'Allow once', denyLabel: 'Refuse' });
+        return { ok, text: ok ? 'requestUserInteraction resolved true → workspace deleted.' : 'Resolved false → { isError: true, "Refused by user." }' };
+      }
+      if (lab.run === 'structured') {
+        const t = this.map.get('get_ticket');
+        if (!t) return { ok: false, text: 'get_ticket is not declared. Re-declare the desk surface in the sandbox.' };
+        const out = await this.exec(t, { ticket: 'T-1042' }, 'lab ' + lab.n);
+        return { ok: true, text: JSON.stringify(out.structuredContent, null, 2) };
+      }
+      if (lab.run === 'shared') {
+        const t = this.map.get('assign_ticket');
+        if (!t) return { ok: false, text: 'assign_ticket is not declared.' };
+        const out = await this.exec(t, { ticket: 'T-1035', owner: 'Kenji T.' }, 'lab ' + lab.n);
+        return { ok: true, text: 'T-1035 moved to Kenji T. — open the sandbox: the row flashed and the owner column changed under the user’s cursor.\n' + JSON.stringify(out.structuredContent) };
+      }
+      if (lab.run === 'annotations') {
+        const rows = Array.from(this.map.values()).map(t => t.name + ' → ' + this.annOf(t));
+        return { ok: true, text: rows.length ? rows.join('\n') : 'Registry empty — nothing to annotate yet.' };
+      }
+      if (lab.run === 'security') {
+        return { ok: true, text: JSON.stringify({ secureContext: window.isSecureContext, origin: location.origin, protocol: location.protocol, nativeApi: this.native, polyfill: !this.native }, null, 2) };
+      }
+      if (lab.run === 'progress') {
+        const t = this.map.get('reply_to_ticket');
+        if (!t) { this.setState({ openId: 'T-1042' }); this.publish(true); }
+        const tool = this.map.get('reply_to_ticket');
+        if (!tool) return { ok: false, text: 'reply_to_ticket only exists while a ticket is open.' };
+        const out = await this.exec(tool, { ticket: 'T-1042', body: 'Looking into the duplicate charge now.' }, 'lab ' + lab.n);
+        return { ok: true, text: 'Four progress reports landed in the activity log while execute() was still running.\n' + JSON.stringify(out.structuredContent) };
+      }
+      return { ok: false, text: 'No runner for ' + name };
+    } catch (e) {
+      return { ok: false, text: (e.name || 'Error') + ': ' + (e.message || e) };
+    }
+  }
+}
+
+</script>
 </body>
 </html>
