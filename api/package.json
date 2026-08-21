@@ -1,0 +1,16 @@
+{
+  "name": "webmcp-playground-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "VibeZone Functions API for the WebMCP Lab frontend.",
+  "main": "src/functions/*.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "node --check src/functions/health.js"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.7.0"
+  }
+}

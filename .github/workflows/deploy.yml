@@ -1,0 +1,159 @@
+# VibeZone-managed deployment
+# Prompt version: 3.1.0
+# App slug: webmcp-playground
+# Reconcile this file from a newer VibeZone prompt; do not maintain a second VibeZone deploy workflow.
+name: Deploy to VibeZone
+
+on:
+  push:
+    branches:
+      - "main"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  deploy_branch:
+    name: Build and deploy from branch
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    timeout-minutes: 30
+    concurrency:
+      group: vibezone-production
+      cancel-in-progress: false
+    env:
+      WEBAPP_NAME: "app-vibezone-webmcp-playground"
+      RESOURCE_GROUP: "rg-vibezone-webmcp-playground-weu-dev"
+      APP_OUTPUT: "dist"
+      API_APP_NAME: "func-vibezone-webmcp-playground"
+      API_LOCATION: "api"
+      API_PACKAGE_DIR: "api"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Verify connected repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git config --get remote.origin.url)"
+          case "$actual" in
+            "https://github.com/TimurDudhaschGK/WebMCP-Playground"|"https://github.com/TimurDudhaschGK/WebMCP-Playground.git"|"git@github.com:TimurDudhaschGK/WebMCP-Playground.git") ;;
+            *) echo "origin does not match the VibeZone-connected repository: $actual" >&2; exit 1 ;;
+          esac
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+
+      - name: Build browser output
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$APP_OUTPUT"
+          mkdir -p "$APP_OUTPUT"
+          cp index.html support.js "$APP_OUTPUT/"
+          cp -R _ds "$APP_OUTPUT/_ds"
+
+      - name: Check browser output
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check "$APP_OUTPUT/support.js"
+          find "$APP_OUTPUT/_ds" -type f -name '*.js' -print0 | xargs -0 -r -n1 node --check
+          grep -q '<x-dc>' "$APP_OUTPUT/index.html"
+          grep -q 'support.js' "$APP_OUTPUT/index.html"
+          grep -q 'class Component extends DCLogic' "$APP_OUTPUT/index.html"
+          test -f "$APP_OUTPUT/_ds/nocturne-bcfa1af6-1a06-45ff-ab35-64acd41ead6d/styles.css"
+          test -f "$APP_OUTPUT/_ds/nocturne-bcfa1af6-1a06-45ff-ab35-64acd41ead6d/_ds_bundle.js"
+
+      - name: Stage and validate deployment artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "$APP_OUTPUT/index.html"
+          rm -rf "$RUNNER_TEMP/vibezone-app"
+          mkdir -p "$RUNNER_TEMP/vibezone-app"
+          rsync -a \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='node_modules/' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            "$APP_OUTPUT/" "$RUNNER_TEMP/vibezone-app/"
+          test -f .vibezone/server.mjs
+          mkdir -p "$RUNNER_TEMP/vibezone-app/.vibezone"
+          cp .vibezone/server.mjs "$RUNNER_TEMP/vibezone-app/.vibezone/server.mjs"
+          node --check "$RUNNER_TEMP/vibezone-app/.vibezone/server.mjs"
+          test -f "$RUNNER_TEMP/vibezone-app/index.html"
+          test -z "$(find "$RUNNER_TEMP/vibezone-app" -type f \( -name '*.pem' -o -name '*.pfx' -o -name '*.key' \) -print -quit)"
+          find "$RUNNER_TEMP/vibezone-app" -type f -printf '%P\n' | sort
+
+      - name: Register VibeZone OIDC trust
+        shell: bash
+        run: |
+          set -euo pipefail
+          id_token=$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://vibezone-register" | jq -r '.value')
+          test -n "$id_token"
+          curl --retry 3 --retry-all-errors -sSf -X POST "https://vibezone.c4a8.net/api/register-oidc" \
+            -H 'Content-Type: application/json' \
+            --data "{\"slug\":\"webmcp-playground\",\"token\":\"$id_token\"}" > /dev/null
+
+      - name: Azure login with VibeZone OIDC
+        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2
+        with:
+          client-id: "39601a93-36cd-469a-b860-1d3da78c9669"
+          tenant-id: "a53834b7-42bc-46a3-b004-369735c3acf9"
+          subscription-id: "33ac332e-ee18-412b-9860-cc11b041c76a"
+
+      - name: Deploy to Azure App Service
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f "$RUNNER_TEMP/vibezone-app.zip"
+          (cd "$RUNNER_TEMP/vibezone-app" && zip -r "$RUNNER_TEMP/vibezone-app.zip" .)
+          az webapp deploy \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$WEBAPP_NAME" \
+            --src-path "$RUNNER_TEMP/vibezone-app.zip" \
+            --type zip \
+            --clean true
+
+      - name: Check API
+        shell: bash
+        working-directory: "api"
+        run: |
+          set -euo pipefail
+          node --check src/functions/health.js
+
+      - name: Install API production dependencies
+        shell: bash
+        working-directory: "api"
+        run: |
+          set -euo pipefail
+          npm ci --omit=dev
+          npm ls --omit=dev --depth=0
+
+      - name: Validate Functions package
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "$API_PACKAGE_DIR/host.json"
+          test -f "$API_PACKAGE_DIR/package.json"
+          test -d "$API_PACKAGE_DIR/node_modules/@azure/functions"
+          test -n "$(find "$API_PACKAGE_DIR" -type f -path '*/functions/*.js' -print -quit)"
+
+      - name: Deploy API to Azure Functions
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f "$RUNNER_TEMP/vibezone-api.zip"
+          (cd "$API_PACKAGE_DIR" && zip -r "$RUNNER_TEMP/vibezone-api.zip" .)
+          az functionapp deployment source config-zip \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$API_APP_NAME" \
+            --src "$RUNNER_TEMP/vibezone-api.zip"
